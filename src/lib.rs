@@ -33,10 +33,12 @@ pub const ADDR_8BIT_DEFAULT:u8 = 0x1C;
 pub const DEFAULT_ADDRESS:u8 = ADDR_7BIT_DEFAULT;
 
 
+const SEND_BUF_LEN: usize = 32;
 
 struct IST8310<I2C> {
     address: u8,
     i2c_port: I2C,
+    packet_buf: [u8;SEND_BUF_LEN ]
 }
 
 impl<I2C, CommE> IST8310<I2C>
@@ -46,10 +48,15 @@ impl<I2C, CommE> IST8310<I2C>
         + embedded_hal::blocking::i2c::WriteRead<Error = CommE>,
 {
 
+    fn default(i2c: I2C) -> Self {
+        Self::new(i2c, DEFAULT_ADDRESS)
+    }
+
     fn new(i2c: I2C, addr: u8) ->  Self {
         Self {
             i2c_port: i2c,
             address: addr,
+            packet_buf: [0;SEND_BUF_LEN]
         }
     }
 
@@ -57,20 +64,36 @@ impl<I2C, CommE> IST8310<I2C>
 
     }
 
-    fn read(&mut self, recv_buf: &mut [u8]) -> Result<usize, Error<CommE, ()>> {
+
+    /// Read a block from a specific register
+    /// reg: The register address to read from
+    /// recv_buf: The buffer to receive into
+    fn read(&mut self, reg: u8, recv_buf: &mut [u8]) -> Result<(), Error<CommE>> {
+        let cmd_buf = [reg];
         self.i2c_port
-            .read(self.address, recv_buf)
+            .write_read(self.address, &cmd_buf, recv_buf)
             .map_err(Error::Comm)?;
+        Ok(())
     }
 
-    fn write(&mut self, send_buf: &[u8]) Result<(), Error<CommE, ()>>{
+    ///	 Write a block to a specific register
+    /// reg: The register address to write to
+    /// send_buf: The buffer to send
+    fn write(&mut self, reg: u8, send_buf: &[u8]) -> Result<(), Error<CommE>>{
+        self.packet_buf[0] = reg;
+        //this panics if send_buf is bigger than expected:
+        self.packet_buf[1..send_buf.len()+1].copy_from_slice(send_buf);
         self.i2c_port
-            .write(self.address, send_buf)
+            .write(self.address, &self.packet_buf)
             .map_err(Error::Comm)?;
+        Ok(())
     }
 
-    fn read_reg(&mut self, reg: u8, &mut val: u8 ) {
-        //self.read(reg, &buf, 1);
+
+    fn read_reg(&mut self, reg: u8, val: &mut u8 ) {
+        let mut read_buf = [val];
+        self.read(reg,&mut read_buf);
+        val = read_buf[0];
     }
 
     fn write_reg(&mut self, reg: u8, val: u8) {
