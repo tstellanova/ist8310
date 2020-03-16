@@ -9,10 +9,12 @@ This sensor is claimed to be pin-compatible with the HMC5883 magnetometer.
 ## Status
 
 - [ ] Basic i2c setup support
-- [ ] read of main orientation vector
-- [ ] Usage example with cortex-m
-- [ ] tests with mock embedded hal
+- [ ] read of main xyz magentometer vector
+- [ ] Tests with mock embedded hal
+- [ ] Periodic configuration check (for poor i2c connections)
+- [ ] Usage example with `cortex-m` hal
 - [ ] CI
+- [ ] support for cross-axis flow calibration
 
 
 
