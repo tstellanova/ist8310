@@ -5,7 +5,7 @@ LICENSE: BSD3 (see LICENSE file)
 
 #![no_std]
 
-extern crate embedded_hal as hal;
+use embedded_hal as hal;
 use hal::blocking::delay::DelayMs;
 
 
@@ -19,7 +19,10 @@ pub enum Error<CommE> {
     OutOfRange,
 
     /// Configuration reads invalid
-    Configuration
+    Configuration,
+
+    /// Unrecognized chip ID
+    UnknownChipId,
 }
 
 /// This device supports multiple addresses depending on
@@ -120,7 +123,7 @@ impl<I2C, CommE> IST8310<I2C>
         const SRST_POR_FLAG: u8 = 0x01 << 0;
         //const DRDY_POLARITY_FLAG: u8 = 0x01 << 2;
         //const DRDY_ENABLE_FLAG: u8 = 0x01 << 3;
-
+        const EXPECTED_PROD_ID:u8 = 0x10;
         // perform power-on-reset POR sequence
         self.write_reg(REG_CTRL2, SRST_POR_FLAG)?;
 
@@ -134,7 +137,9 @@ impl<I2C, CommE> IST8310<I2C>
 
         //compare product ID against known product ID
         let product_id = self.read_reg(REG_WAI)?;
-        assert!(product_id == 0x10);
+        if product_id != EXPECTED_PROD_ID {
+            return Err(Error::UnknownChipId)
+        }
 
         Ok(())
     }
