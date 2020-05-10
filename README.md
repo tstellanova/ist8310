@@ -4,7 +4,12 @@ A rust embedded-hal driver for the
 Isentek IST8310 
 3-axis magnetometer.
 
-This sensor is claimed to be pin-compatible with the HMC5883 magnetometer. 
+This sensor is claimed to be pin-compatible with the obsolete
+Honeywell HMC5883 magnetometer. 
+Like the HMC5883, the IST8310 only supports an I2C interface.
+
+The register map of the IST8310 differs significantly from
+the HMC5883, and the reset and configuration sequence is different.
 
 ## Status
 
